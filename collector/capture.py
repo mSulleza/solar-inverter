@@ -22,10 +22,7 @@ trusting it: decode a real capture, eyeball the numbers, adjust registers.py.
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from registers import PROFILES, derive, suggest_mapping
 from solarman_v5 import CONTROL_DATA, V5Stream, parse_frame

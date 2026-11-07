@@ -48,6 +48,11 @@ from typing import Optional
 START_BYTE = 0xA5
 END_BYTE = 0x15
 
+# Real stick frames are a few hundred bytes. A header claiming more than this is
+# garbage (or hostile): honouring it would make the stream buffer up to 64 KB
+# waiting for a frame that never comes, so it is rejected and we resync.
+MAX_PAYLOAD_LEN = 2048
+
 # Control codes seen from these sticks. The stick sends the "request" variants;
 # the server replies with the matching 0x1x form.
 CONTROL_HELLO = 0x4110
@@ -165,6 +170,8 @@ def parse_frame(frame: bytes) -> Optional[V5Frame]:
         return None
 
     payload_len, control, sequence, logger_serial = struct.unpack("<HHHI", frame[1:11])
+    if payload_len > MAX_PAYLOAD_LEN:
+        return None
     payload = frame[11 : 11 + payload_len]
 
     parsed = V5Frame(
@@ -221,6 +228,11 @@ class V5Stream:
                 continue
 
             payload_len = int.from_bytes(self._buffer[1:3], "little")
+            if payload_len > MAX_PAYLOAD_LEN:
+                # Impossible length: drop this start byte now and hunt for the
+                # next one, rather than waiting for up to 64 KB to arrive.
+                del self._buffer[:1]
+                continue
             total_len = payload_len + 13
             if len(self._buffer) < total_len:
                 break

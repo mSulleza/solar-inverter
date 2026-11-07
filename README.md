@@ -34,7 +34,9 @@ Full detail and setup steps: **[collector/RUNBOOK.md](collector/RUNBOOK.md)**.
 | `collector/dns_redirect.py`| forwarding DNS with Solarman-host redirect |
 | `collector/arp_redirect.py`| stick-only ARP interception (no router change) |
 | `collector/sink.py`        | local spool → Neon Postgres, at-least-once |
-| `collector/run.py`         | collector entrypoint |
+| `collector/run.py`         | collector entrypoint (binds, drops root, supervises ARP mode) |
+| `collector/privileges.py`  | refuse bare root; drop to the sudo user |
+| `collector/logsafe.py`     | sanitise network text for logs; throttle repeated warnings |
 | `collector/capture.py`     | offline decode of a captured session |
 | `db/schema.sql`            | Neon schema (readings, raw_frames, views) |
 | `db/seed_demo.py`          | 24h of demo data for the dashboard |

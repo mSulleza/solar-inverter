@@ -71,7 +71,8 @@ def test_proxy_relays_and_collector_decodes():
     # Point the proxy straight at the fake server; no resolution needed.
     proxy.ProxyHandler.upstream_addr = ("127.0.0.1", upstream_port)
     proxy.ProxyHandler.on_frame = staticmethod(collector.on_frame)
-    server_obj = proxy.ProxyServer(("127.0.0.1", proxy_port), proxy.ProxyHandler)
+    # The fake stick connects from 127.0.0.1, so that is the stick's address here.
+    server_obj = proxy.ProxyServer(("127.0.0.1", proxy_port), proxy.ProxyHandler, stick_ip="127.0.0.1")
     threading.Thread(target=server_obj.serve_forever, daemon=True).start()
     time.sleep(0.3)
 

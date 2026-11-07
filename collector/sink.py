@@ -23,7 +23,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
+from logsafe import Throttle
+
 log = logging.getLogger("sink")
+
+# Hard ceiling on queued rows. Normal traffic is roughly a thousand rows a day,
+# so this rides out weeks of Neon being unreachable; past it, new rows are
+# dropped (and logged once a minute) rather than filling the disk -- and later
+# the database -- with a flood.
+MAX_PENDING_ROWS = 20_000
 
 SPOOL_SCHEMA = """
 create table if not exists spool (
@@ -65,8 +73,12 @@ class NeonConfig:
 
 
 class Sink:
-    def __init__(self, spool_path: Path, config: Optional[NeonConfig]) -> None:
+    def __init__(self, spool_path: Path, config: Optional[NeonConfig],
+                 max_pending: int = MAX_PENDING_ROWS) -> None:
         self.config = config
+        self.max_pending = max_pending
+        self.rows_dropped = 0
+        self._full_log = Throttle(1, 60.0)
         self._lock = threading.Lock()
         self._db = sqlite3.connect(str(spool_path), check_same_thread=False)
         self._db.executescript(SPOOL_SCHEMA)
@@ -75,13 +87,22 @@ class Sink:
         if config is None:
             log.warning("no Neon config -- readings will spool locally only")
 
-    def write(self, table: str, row: dict[str, Any]) -> None:
+    def write(self, table: str, row: dict[str, Any]) -> bool:
+        """Queue a row. Returns False (row dropped) if the spool is full."""
         with self._lock:
+            queued = self._db.execute("select count(*) from spool").fetchone()[0]
+            if queued >= self.max_pending:
+                self.rows_dropped += 1
+                if self._full_log.allow():
+                    log.error("spool full (%d rows) -- dropping new rows until it drains "
+                              "(logged once a minute)", queued)
+                return False
             self._db.execute(
                 "insert into spool (table_name, body, created_at) values (?, ?, ?)",
                 (table, json.dumps(row, default=str), time.time()),
             )
             self._db.commit()
+            return True
 
     def pending(self) -> int:
         with self._lock:
