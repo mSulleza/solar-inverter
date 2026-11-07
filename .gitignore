@@ -1,0 +1,9 @@
+node_modules
+.next
+.env*
+.vercel
+collector_spool.db
+*.pyc
+__pycache__
+collector/.pytest_cache
+.pytest_cache

@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0a0e14;
+  --bg-elev: #111722;
+  --bg-card: #141b28;
+  --border: #1f2937;
+  --text: #e6edf3;
+  --text-dim: #8b98a9;
+  --text-faint: #5a6675;
+
+  /* Energy domain colours -- consistent everywhere a quantity appears */
+  --solar: #f5b301;      /* PV generation */
+  --solar-glow: rgba(245, 179, 1, 0.15);
+  --battery: #35d07f;    /* battery / storage */
+  --load: #4aa8ff;       /* household load */
+  --grid: #b06cf0;       /* utility grid */
+  --danger: #ff5f56;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(245, 179, 1, 0.06), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+}
+
+.mono { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace; }
+
+.card {
+  background: linear-gradient(180deg, var(--bg-card), var(--bg-elev));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.glow-solar { box-shadow: 0 0 0 1px rgba(245,179,1,0.25), 0 8px 40px -12px var(--solar-glow); }
+
+/* subtle pulse on the live dot */
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.pulse { animation: pulse 2s ease-in-out infinite; }
+
+.tabnum { font-variant-numeric: tabular-nums; }
